@@ -84,6 +84,14 @@ export default function AddEdit({ cryptoKey }: Props) {
   }, [cryptoKey, id, isEdit]);
 
   useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") navigate(-1);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navigate]);
+
+  useEffect(() => {
     if (!form.password) {
       setBreachCount(null);
       return;

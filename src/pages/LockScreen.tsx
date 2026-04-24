@@ -120,7 +120,7 @@ export default function LockScreen({ onUnlock }: Props) {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden">
+    <div className="relative flex items-center justify-center p-6 overflow-hidden" style={{ minHeight: "100dvh" }}>
       {/* Aurora background */}
       <NorthernLightsCanvas />
       {/* Overlay */}
@@ -149,10 +149,10 @@ export default function LockScreen({ onUnlock }: Props) {
         transition={{ duration: 0.4 }}
         className="relative z-10 w-full max-w-sm"
       >
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
             <svg
-              className="w-8 h-8 text-indigo-400"
+              className="w-7 h-7 sm:w-8 sm:h-8 text-indigo-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -165,7 +165,7 @@ export default function LockScreen({ onUnlock }: Props) {
               />
             </svg>
           </div>
-          <h1 className="text-white text-2xl font-semibold tracking-tight">
+          <h1 className="text-white text-xl sm:text-2xl font-semibold tracking-tight">
             {t.title}
           </h1>
           <p className="text-zinc-500 text-sm mt-1">

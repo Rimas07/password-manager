@@ -7,6 +7,7 @@ interface Props {
   credential: Credential;
   isReused: boolean;
   onCopy: (text: string, label: string) => void;
+  onDelete: (id: string) => void;
 }
 
 const strengthConfig = {
@@ -30,54 +31,46 @@ function FaviconIcon({ url, name }: { url: string; name: string }) {
 
   if (faviconUrl) {
     return (
-      <div className="w-10 h-10 rounded-xl bg-[#0a0a0f] border border-white/5 flex items-center justify-center flex-shrink-0 overflow-hidden">
+      <div className="w-12 h-12 rounded-xl bg-[#0a0a0f] border border-white/5 flex items-center justify-center flex-shrink-0 overflow-hidden">
         <img
           src={faviconUrl}
           alt=""
           onError={() => setFailed(true)}
-          className="w-6 h-6 object-contain"
+          className="w-7 h-7 object-contain"
         />
       </div>
     );
   }
 
   return (
-    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-semibold text-sm flex-shrink-0">
+    <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-semibold text-base flex-shrink-0">
       {name.charAt(0).toUpperCase()}
     </div>
   );
 }
 
-export default function PasswordCard({ credential, isReused, onCopy }: Props) {
+export default function PasswordCard({ credential, isReused, onCopy, onDelete }: Props) {
   const [revealed, setRevealed] = useState(false);
   const navigate = useNavigate();
   const sc = strengthConfig[getStrength(credential.password)];
 
   return (
-    <div className="bg-[#13131a] border border-white/5 rounded-2xl p-4 hover:border-white/10 transition-all group">
+    <div className="bg-[#13131a] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all group">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          {/* <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-semibold text-sm flex-shrink-0">
-            {credential.name.charAt(0).toUpperCase()}
-          </div> */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3.5">
           <FaviconIcon url={credential.url} name={credential.name} />
-
           <div>
-            <h3 className="text-white font-medium text-sm">
+            <h3 className="text-white font-semibold text-base">
               {credential.name}
             </h3>
             {credential.url && (
               <a
-                href={
-                  credential.url.startsWith("http")
-                    ? credential.url
-                    : `https://${credential.url}`
-                }
+                href={credential.url.startsWith("http") ? credential.url : `https://${credential.url}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="text-zinc-600 hover:text-indigo-400 text-xs mt-0.5 truncate max-w-[140px] block transition-colors"
+                className="text-zinc-500 hover:text-indigo-400 text-xs mt-0.5 truncate max-w-[180px] block transition-colors"
               >
                 {credential.url}
               </a>
@@ -86,68 +79,48 @@ export default function PasswordCard({ credential, isReused, onCopy }: Props) {
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {credential.category && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               {credential.category}
             </span>
           )}
           <button
             onClick={() => navigate(`/edit/${credential.id}`)}
-            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-all"
+            className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-all"
           >
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-              />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
           </button>
         </div>
       </div>
 
       {/* Username row */}
-      <div className="flex items-center justify-between mb-2 group/u">
-        <span className="text-zinc-400 text-xs truncate flex-1 mr-2">
+      <div className="flex items-center justify-between mb-2.5 group/u">
+        <span className="text-zinc-400 text-sm truncate flex-1 mr-2">
           {credential.username}
         </span>
         <button
           onClick={() => onCopy(credential.username, "Логин")}
-          className="opacity-0 group-hover/u:opacity-100 p-1 text-zinc-600 hover:text-white transition-all flex-shrink-0"
+          className="p-1 text-zinc-600 hover:text-white transition-all flex-shrink-0"
         >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
         </button>
       </div>
 
       {/* Password row */}
       <div className="flex items-center justify-between group/p">
-        <span className="text-zinc-400 text-xs flex-1 mr-2 font-mono">
+        <span className="text-zinc-400 text-sm flex-1 mr-2 font-mono tracking-wider">
           {revealed ? credential.password : "••••••••••"}
         </span>
-        <div className="flex items-center gap-1 opacity-0 group-hover/p:opacity-100 transition-all">
+        <div className="flex items-center gap-1 transition-all">
           <button
             onClick={() => setRevealed((r) => !r)}
             className="p-1 text-zinc-600 hover:text-white transition-colors"
           >
             <svg
-              className="w-3.5 h-3.5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -182,7 +155,7 @@ export default function PasswordCard({ credential, isReused, onCopy }: Props) {
             className="p-1 text-zinc-600 hover:text-white transition-colors"
           >
             <svg
-              className="w-3.5 h-3.5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -199,16 +172,27 @@ export default function PasswordCard({ credential, isReused, onCopy }: Props) {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-        <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
-          <span className={`text-xs ${sc.color}`}>{sc.label}</span>
+      <div className="flex items-center justify-between gap-2 mt-4 pt-3.5 border-t border-white/5">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${sc.dot}`} />
+          <span className={`text-sm ${sc.color}`}>{sc.label}</span>
         </div>
-        {isReused && (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
-            ⚠ Повторяется
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {isReused && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
+              ⚠ Повторяется
+            </span>
+          )}
+          <button
+            onClick={() => { if (confirm("Удалить эту запись?")) onDelete(credential.id); }}
+            className="p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+            title="Удалить"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
