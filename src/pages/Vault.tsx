@@ -7,29 +7,23 @@ import { findReusedPasswords, getStrength } from "../utils/passwordUtils";
 import PasswordCard from "../components/PasswordCard";
 import EmptyState from "../components/EmptyState";
 import OnboardingModal from "../components/OnboardingModal";
-
-
+import { useLang } from "../contexts/LangContext";
+import { translations } from "../locales/translations";
+import type { Lang } from "../contexts/LangContext";
 
 interface Props {
   cryptoKey: CryptoKey;
   onLock: () => void;
 }
 
-
-const CATEGORIES = [
-  "Все",
-  "Engineering",
-  "Marketing",
-  "Finance",
-  "HR",
-  "Design",
-  "Other",
-];
+const CATEGORY_ALL = "all";
+const CATEGORIES = [CATEGORY_ALL, "Engineering", "Marketing", "Finance", "HR", "Design", "Other"];
+const LANG_LABELS: Record<Lang, string> = { en: "EN", ru: "RU", uz: "UZB" };
 
 export default function Vault({ cryptoKey, onLock }: Props) {
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("Все");
+  const [category, setCategory] = useState(CATEGORY_ALL);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"name" | "date" | "strength">("date");
   const [toast, setToast] = useState("");
@@ -38,6 +32,9 @@ export default function Vault({ cryptoKey, onLock }: Props) {
   );
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const { lang, setLang } = useLang();
+  const t = translations[lang];
 
   useEffect(() => {
     loadVault(cryptoKey).then((data) => {
@@ -50,11 +47,17 @@ export default function Vault({ cryptoKey, onLock }: Props) {
   }, []);
 
   useEffect(() => {
+    document.title = credentials.length > 0 ? `PassVault (${credentials.length})` : "PassVault";
+    return () => { document.title = "PassVault"; };
+  }, [credentials.length]);
+
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const tag = (document.activeElement as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const key = e.key.toLowerCase();
+      if (e.key === "/") { e.preventDefault(); searchRef.current?.focus(); return; }
       if (key === "n" || key === "т") { e.preventDefault(); navigate("/add"); }
       if (key === "l" || key === "д") { e.preventDefault(); onLock(); }
     }
@@ -63,7 +66,6 @@ export default function Vault({ cryptoKey, onLock }: Props) {
   }, [navigate, onLock]);
 
   const reusedPasswords = findReusedPasswords(credentials);
-
   const strengthOrder = { weak: 0, fair: 1, strong: 2 };
 
   const filtered = credentials
@@ -73,7 +75,7 @@ export default function Vault({ cryptoKey, onLock }: Props) {
         c.name.toLowerCase().includes(q) ||
         c.username.toLowerCase().includes(q) ||
         c.url.toLowerCase().includes(q);
-      const matchesCategory = category === "Все" || c.category === category;
+      const matchesCategory = category === CATEGORY_ALL || c.category === category;
       return matchesSearch && matchesCategory;
     })
     .sort((a, b) => {
@@ -84,7 +86,7 @@ export default function Vault({ cryptoKey, onLock }: Props) {
 
   async function handleCopy(text: string, label: string) {
     await navigator.clipboard.writeText(text);
-    setToast(`${label} скопирован`);
+    setToast(`${label} ${t.copiedSuffix}`);
     setTimeout(() => setToast(""), 2000);
   }
 
@@ -118,9 +120,10 @@ export default function Vault({ cryptoKey, onLock }: Props) {
               </svg>
               <input
                 type="text"
+                ref={searchRef}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Поиск по имени, логину, URL..."
+                placeholder={t.searchPlaceholder}
                 className="w-full bg-white/5 border border-white/8 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder-zinc-500 outline-none focus:border-indigo-500/50 focus:bg-white/8 transition-all"
               />
             </div>
@@ -147,17 +150,34 @@ export default function Vault({ cryptoKey, onLock }: Props) {
                 </button>
               </div>
 
-              <button onClick={() => navigate("/security")} className="p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/8 transition-all" title="Безопасность">
+              {/* Language switcher */}
+              <div className="flex items-center gap-0.5">
+                {(["en", "ru", "uz"] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`text-xs px-2 py-1.5 rounded-lg transition-all ${
+                      lang === l
+                        ? "bg-white/10 text-white"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    {LANG_LABELS[l]}
+                  </button>
+                ))}
+              </div>
+
+              <button onClick={() => navigate("/security")} className="p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/8 transition-all" title={t.btnSecurity}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </button>
-              <button onClick={() => navigate("/settings")} className="p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/8 transition-all" title="Настройки">
+              <button onClick={() => navigate("/settings")} className="p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/8 transition-all" title={t.btnSettings}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </button>
-              <button onClick={onLock} className="p-2.5 rounded-xl text-zinc-400 hover:text-red-400 hover:bg-red-500/8 transition-all" title="Заблокировать">
+              <button onClick={onLock} className="p-2.5 rounded-xl text-zinc-400 hover:text-red-400 hover:bg-red-500/8 transition-all" title={t.btnLock}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
@@ -174,7 +194,7 @@ export default function Vault({ cryptoKey, onLock }: Props) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск..."
+              placeholder={t.searchPlaceholderShort}
               className="w-full bg-white/5 border border-white/8 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm placeholder-zinc-500 outline-none focus:border-indigo-500/50 transition-all"
             />
           </div>
@@ -182,12 +202,12 @@ export default function Vault({ cryptoKey, onLock }: Props) {
           {/* Stats */}
           {credentials.length > 0 && (
             <div className="mt-3 flex items-center gap-4">
-              <span className="text-zinc-500 text-xs">{credentials.length} записей</span>
+              <span className="text-zinc-500 text-xs">{credentials.length} {t.records}</span>
               {credentials.filter((c) => getStrength(c.password) === "weak").length > 0 && (
-                <span className="text-red-400 text-xs">· {credentials.filter((c) => getStrength(c.password) === "weak").length} слабых</span>
+                <span className="text-red-400 text-xs">· {credentials.filter((c) => getStrength(c.password) === "weak").length} {t.weak}</span>
               )}
               {reusedPasswords.size > 0 && (
-                <span className="text-orange-400 text-xs">· {reusedPasswords.size} повторяются</span>
+                <span className="text-orange-400 text-xs">· {reusedPasswords.size} {t.reused}</span>
               )}
             </div>
           )}
@@ -204,7 +224,7 @@ export default function Vault({ cryptoKey, onLock }: Props) {
                     : "text-zinc-500 hover:text-white border border-transparent hover:border-white/10"
                 }`}
               >
-                {cat}
+                {cat === CATEGORY_ALL ? t.categoryAll : (t.categoryLabels[cat] ?? cat)}
               </button>
             ))}
           </div>
@@ -216,7 +236,7 @@ export default function Vault({ cryptoKey, onLock }: Props) {
       <div className="max-w-5xl mx-auto px-4 py-6 relative z-10">
         {credentials.length > 0 && (
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-zinc-600 text-xs">Сортировка:</span>
+            <span className="text-zinc-600 text-xs">{t.sortLabel}</span>
             {(["date", "name", "strength"] as const).map((s) => (
               <button
                 key={s}
@@ -227,7 +247,7 @@ export default function Vault({ cryptoKey, onLock }: Props) {
                     : "text-zinc-500 hover:text-white border border-transparent hover:border-white/10"
                 }`}
               >
-                {s === "date" ? "По дате" : s === "name" ? "По имени" : "По силе"}
+                {s === "date" ? t.sortDate : s === "name" ? t.sortName : t.sortStrength}
               </button>
             ))}
           </div>
@@ -236,7 +256,7 @@ export default function Vault({ cryptoKey, onLock }: Props) {
           <EmptyState />
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-zinc-600 text-sm">
-            Ничего не найдено
+            {t.nothingFound}
           </div>
         ) : (
           <div
@@ -276,18 +296,8 @@ export default function Vault({ cryptoKey, onLock }: Props) {
         onClick={() => navigate("/add")}
         className="fixed bottom-6 right-6 z-20 w-12 h-12 bg-indigo-500 hover:bg-indigo-400 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95"
       >
-        <svg
-          className="w-5 h-5 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4v16m8-8H4"
-          />
+        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       </button>
 
@@ -307,8 +317,8 @@ export default function Vault({ cryptoKey, onLock }: Props) {
 
       {/* Keyboard hint */}
       <div className="fixed bottom-6 left-6 hidden sm:flex items-center gap-3 z-10">
-        <span className="text-zinc-500 text-xs"><kbd className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 font-mono text-xs text-zinc-300">N</kbd> новая запись</span>
-        <span className="text-zinc-500 text-xs"><kbd className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 font-mono text-xs text-zinc-300">L</kbd> заблокировать</span>
+        <span className="text-zinc-500 text-xs"><kbd className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 font-mono text-xs text-zinc-300">N</kbd> {t.kbNewEntry}</span>
+        <span className="text-zinc-500 text-xs"><kbd className="bg-white/10 border border-white/20 rounded px-1.5 py-0.5 font-mono text-xs text-zinc-300">L</kbd> {t.kbLock}</span>
       </div>
 
       {/* Onboarding */}

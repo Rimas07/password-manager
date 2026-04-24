@@ -3,65 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { deriveKey } from "../utils/crypto";
 import NorthernLightsCanvas from "../components/NorthernLights";
-
-import {
-  getSalt,
-  saveSalt,
-  generateSalt,
-  loadVault,
-  saveVault,
-} from "../utils/storage";
+import { getSalt, saveSalt, generateSalt, loadVault, saveVault } from "../utils/storage";
+import { useLang } from "../contexts/LangContext";
+import { translations } from "../locales/translations";
+import type { Lang } from "../contexts/LangContext";
 
 interface Props {
   onUnlock: (key: CryptoKey) => void;
 }
 
-type Lang = "en" | "ru" | "uz";
-
-const translations: Record<Lang, Record<string, string>> = {
-  en: {
-    title: "PassVault",
-    subtitleNew: "Create a master password",
-    subtitleExisting: "Enter your master password",
-    placeholder: "Master password",
-    placeholderConfirm: "Confirm password",
-    errorMismatch: "Passwords do not match",
-    errorShort: "Minimum 6 characters",
-    errorWrong: "Incorrect password",
-    errorGeneric: "Something went wrong",
-    loading: "Loading...",
-    buttonCreate: "Create vault",
-    buttonUnlock: "Unlock",
-  },
-  ru: {
-    title: "PassVault",
-    subtitleNew: "Создайте мастер-пароль",
-    subtitleExisting: "Введите мастер-пароль",
-    placeholder: "Мастер-пароль",
-    placeholderConfirm: "Подтвердите пароль",
-    errorMismatch: "Пароли не совпадают",
-    errorShort: "Минимум 6 символов",
-    errorWrong: "Неверный пароль",
-    errorGeneric: "Что-то пошло не так",
-    loading: "Загрузка...",
-    buttonCreate: "Создать хранилище",
-    buttonUnlock: "Разблокировать",
-  },
-  uz: {
-    title: "PassVault",
-    subtitleNew: "Master parol yarating",
-    subtitleExisting: "Master parolni kiriting",
-    placeholder: "Master parol",
-    placeholderConfirm: "Parolni tasdiqlang",
-    errorMismatch: "Parollar mos kelmadi",
-    errorShort: "Kamida 6 ta belgi",
-    errorWrong: "Noto'g'ri parol",
-    errorGeneric: "Xatolik yuz berdi",
-    loading: "Yuklanmoqda...",
-    buttonCreate: "Xazinani yaratish",
-    buttonUnlock: "Ochish",
-  },
-};
+const LANG_LABELS: Record<Lang, string> = { en: "EN", ru: "RU", uz: "UZB" };
 
 export default function LockScreen({ onUnlock }: Props) {
   const [password, setPassword] = useState("");
@@ -69,9 +20,8 @@ export default function LockScreen({ onUnlock }: Props) {
   const [isFirstTime, setIsFirstTime] = useState(false);
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [lang, setLang] = useState<Lang>("ru");
   const navigate = useNavigate();
-
+  const { lang, setLang } = useLang();
   const t = translations[lang];
 
   useEffect(() => {
@@ -138,7 +88,7 @@ export default function LockScreen({ onUnlock }: Props) {
                 : "text-white/35 hover:text-white/65"
             }`}
           >
-            {l.toUpperCase()}
+            {LANG_LABELS[l]}
           </button>
         ))}
       </div>
@@ -185,11 +135,7 @@ export default function LockScreen({ onUnlock }: Props) {
             disabled={loading}
             className="w-full bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white font-medium py-3 rounded-xl transition-colors mt-1"
           >
-            {loading
-              ? t.loading
-              : isFirstTime
-              ? t.buttonCreate
-              : t.buttonUnlock}
+            {loading ? t.loading : isFirstTime ? t.buttonCreate : t.buttonUnlock}
           </button>
         </form>
       </motion.div>

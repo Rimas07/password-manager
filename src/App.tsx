@@ -12,6 +12,7 @@ import Vault from "./pages/Vault";
 import AddEdit from "./pages/AddEdit";
 import Settings from "./pages/Settings";
 import Security from "./pages/Security";
+import { LangProvider } from "./contexts/LangContext";
 
 
 const pageVariants = {
@@ -131,12 +132,14 @@ export default function App() {
   }, [cryptoKey, lock]);
 
   return (
-    <BrowserRouter>
-      <AnimatedRoutes
-        cryptoKey={cryptoKey}
-        onUnlock={setCryptoKey}
-        onLock={lock}
-      />
-    </BrowserRouter>
+    <LangProvider>
+      <BrowserRouter>
+        <AnimatedRoutes
+          cryptoKey={cryptoKey}
+          onUnlock={setCryptoKey}
+          onLock={lock}
+        />
+      </BrowserRouter>
+    </LangProvider>
   );
 }

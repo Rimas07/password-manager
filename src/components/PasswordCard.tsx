@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Credential } from "../../src/types/types";
 import { getStrength } from "../utils/passwordUtils";
+import { useLang } from "../contexts/LangContext";
+import { translations } from "../locales/translations";
+
+const LOCALE_MAP = { en: "en-GB", ru: "ru-RU", uz: "uz-UZ" } as const;
 
 interface Props {
   credential: Credential;
@@ -10,11 +14,6 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-const strengthConfig = {
-  weak: { label: "Слабый", color: "text-red-400", dot: "bg-red-400" },
-  fair: { label: "Средний", color: "text-yellow-400", dot: "bg-yellow-400" },
-  strong: { label: "Сильный", color: "text-green-400", dot: "bg-green-400" },
-};
 function FaviconIcon({ url, name }: { url: string; name: string }) {
   const [failed, setFailed] = useState(false);
 
@@ -52,6 +51,15 @@ function FaviconIcon({ url, name }: { url: string; name: string }) {
 export default function PasswordCard({ credential, isReused, onCopy, onDelete }: Props) {
   const [revealed, setRevealed] = useState(false);
   const navigate = useNavigate();
+  const { lang } = useLang();
+  const t = translations[lang];
+
+  const strengthConfig = {
+    weak: { label: t.strengthWeak, color: "text-red-400", dot: "bg-red-400" },
+    fair: { label: t.strengthFair, color: "text-yellow-400", dot: "bg-yellow-400" },
+    strong: { label: t.strengthStrong, color: "text-green-400", dot: "bg-green-400" },
+  };
+
   const sc = strengthConfig[getStrength(credential.password)];
 
   return (
@@ -80,7 +88,7 @@ export default function PasswordCard({ credential, isReused, onCopy, onDelete }:
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {credential.category && (
             <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              {credential.category}
+              {t.categoryLabels[credential.category] ?? credential.category}
             </span>
           )}
           <button
@@ -100,7 +108,7 @@ export default function PasswordCard({ credential, isReused, onCopy, onDelete }:
           {credential.username}
         </span>
         <button
-          onClick={() => onCopy(credential.username, "Логин")}
+          onClick={() => onCopy(credential.username, t.loginLabel)}
           className="p-1 text-zinc-600 hover:text-white transition-all flex-shrink-0"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,12 +127,7 @@ export default function PasswordCard({ credential, isReused, onCopy, onDelete }:
             onClick={() => setRevealed((r) => !r)}
             className="p-1 text-zinc-600 hover:text-white transition-colors"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {revealed ? (
                 <path
                   strokeLinecap="round"
@@ -134,38 +137,18 @@ export default function PasswordCard({ credential, isReused, onCopy, onDelete }:
                 />
               ) : (
                 <>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </>
               )}
             </svg>
           </button>
           <button
-            onClick={() => onCopy(credential.password, "Пароль")}
+            onClick={() => onCopy(credential.password, t.passwordLabel)}
             className="p-1 text-zinc-600 hover:text-white transition-colors"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-              />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </button>
         </div>
@@ -183,22 +166,27 @@ export default function PasswordCard({ credential, isReused, onCopy, onDelete }:
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${sc.dot}`} />
           <span className={`text-sm ${sc.color}`}>{sc.label}</span>
+          {credential.createdAt && (
+            <span className="text-zinc-600 text-xs">
+              {new Date(credential.createdAt).toLocaleDateString(LOCALE_MAP[lang], { day: "numeric", month: "short", year: "numeric" })}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {Date.now() - credential.updatedAt > 90 * 24 * 60 * 60 * 1000 && (
             <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
-              🕐 90+ дней
+              🕐 {t.ageBadge}
             </span>
           )}
           {isReused && (
             <span className="text-xs px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
-              ⚠ Повторяется
+              ⚠ {t.reusedBadge}
             </span>
           )}
           <button
-            onClick={() => { if (confirm("Удалить эту запись?")) onDelete(credential.id); }}
+            onClick={() => { if (confirm(t.deleteConfirm)) onDelete(credential.id); }}
             className="p-1.5 rounded-lg text-zinc-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
-            title="Удалить"
+            title={t.deleteTitle}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
