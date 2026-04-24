@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import Papa from "papaparse";
 import { deriveKey } from "../utils/crypto";
 import { getSalt, loadVault, saveVault } from "../utils/storage";
+import type { Credential } from "../types/types";
 
 interface Props {
   cryptoKey: CryptoKey;
@@ -95,6 +97,42 @@ async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
   }
   e.target.value = "";
 }
+
+  async function handleImportCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    Papa.parse(text, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (result) => {
+        try {
+          const rows = result.data as Record<string, string>[];
+          const existing = (await loadVault(cryptoKey) as Credential[]) ?? [];
+          const now = Date.now();
+          const imported: Credential[] = rows
+            .filter((r) => r.password || r.Password)
+            .map((r) => ({
+              id: crypto.randomUUID(),
+              name: r.name || r.Name || r.title || r.Title || "",
+              url: r.url || r.URL || r.login_uri || "",
+              username: r.username || r.Username || r.login_username || r.email || "",
+              password: r.password || r.Password || r.login_password || "",
+              category: "Other",
+              notes: r.note || r.notes || r.extra || "",
+              createdAt: now,
+              updatedAt: now,
+            }));
+          await saveVault(cryptoKey, [...existing, ...imported]);
+          setImportStatus(`✓ Импортировано ${imported.length} записей из CSV`);
+        } catch {
+          setImportStatus("Ошибка: не удалось обработать CSV");
+        }
+      },
+      error: () => setImportStatus("Ошибка: неверный формат CSV"),
+    });
+    e.target.value = "";
+  }
 
   async function handleClearVault() {
     if (!confirm("Удалить все записи? Это действие нельзя отменить.")) return;
@@ -222,6 +260,15 @@ async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
                   type="file"
                   accept=".json"
                   onChange={handleImport}
+                  className="hidden"
+                />
+              </label>
+              <label className="w-full border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white text-sm font-medium py-2.5 rounded-xl transition-all cursor-pointer text-center">
+                Импортировать из CSV
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleImportCSV}
                   className="hidden"
                 />
               </label>

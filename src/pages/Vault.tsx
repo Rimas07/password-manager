@@ -31,6 +31,7 @@ export default function Vault({ cryptoKey, onLock }: Props) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Все");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState<"name" | "date" | "strength">("date");
   const [toast, setToast] = useState("");
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem("onboardingDone")
@@ -63,15 +64,23 @@ export default function Vault({ cryptoKey, onLock }: Props) {
 
   const reusedPasswords = findReusedPasswords(credentials);
 
-  const filtered = credentials.filter((c) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      c.name.toLowerCase().includes(q) ||
-      c.username.toLowerCase().includes(q) ||
-      c.url.toLowerCase().includes(q);
-    const matchesCategory = category === "Все" || c.category === category;
-    return matchesSearch && matchesCategory;
-  });
+  const strengthOrder = { weak: 0, fair: 1, strong: 2 };
+
+  const filtered = credentials
+    .filter((c) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        c.name.toLowerCase().includes(q) ||
+        c.username.toLowerCase().includes(q) ||
+        c.url.toLowerCase().includes(q);
+      const matchesCategory = category === "Все" || c.category === category;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name);
+      if (sortBy === "strength") return strengthOrder[getStrength(a.password)] - strengthOrder[getStrength(b.password)];
+      return b.updatedAt - a.updatedAt;
+    });
 
   async function handleCopy(text: string, label: string) {
     await navigator.clipboard.writeText(text);
@@ -89,17 +98,15 @@ export default function Vault({ cryptoKey, onLock }: Props) {
     <div ref={containerRef} tabIndex={-1} className="min-h-screen bg-[#0a0a0f] relative outline-none" style={{ backgroundImage: "url('/aurora.jpg')", backgroundSize: "cover", backgroundPosition: "bottom center", backgroundAttachment: "fixed" }}>
       <div className="absolute inset-0 bg-black/82 pointer-events-none" />
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-black/85 backdrop-blur-md border-b border-white/5 px-4 py-4 relative">
+      <div className="sticky top-0 z-30 bg-black/85 backdrop-blur-md border-b border-white/5 px-4 py-4 relative">
         <div className="max-w-5xl mx-auto">
 
           {/* Row 1: logo + search (desktop) / logo + actions (mobile) */}
           <div className="flex items-center gap-3">
             {/* Logo */}
             <div className="flex items-center gap-2.5 flex-shrink-0">
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <svg className="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
+              <div className="w-9 h-9 flex items-center justify-center transition-transform duration-300 hover:scale-110 hover:rotate-12 cursor-pointer">
+                <img src="/PassVault.png" alt="PassVault" className="w-full h-full object-contain" />
               </div>
               <span className="text-white font-semibold text-base">PassVault</span>
             </div>
@@ -207,6 +214,24 @@ export default function Vault({ cryptoKey, onLock }: Props) {
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 py-6 relative z-10">
+        {credentials.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-zinc-600 text-xs">Сортировка:</span>
+            {(["date", "name", "strength"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setSortBy(s)}
+                className={`text-xs px-3 py-1.5 rounded-lg transition-all ${
+                  sortBy === s
+                    ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
+                    : "text-zinc-500 hover:text-white border border-transparent hover:border-white/10"
+                }`}
+              >
+                {s === "date" ? "По дате" : s === "name" ? "По имени" : "По силе"}
+              </button>
+            ))}
+          </div>
+        )}
         {credentials.length === 0 ? (
           <EmptyState />
         ) : filtered.length === 0 ? (
@@ -221,24 +246,27 @@ export default function Vault({ cryptoKey, onLock }: Props) {
                 : "flex flex-col gap-3"
             }
           >
-            {filtered.map((c, index) => (
-              <motion.div
-                key={c.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.06, type: "spring", stiffness: 300, damping: 24 }}
-                whileHover={{ y: -4, scale: 1.015 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <PasswordCard
-                  credential={c}
-                  isReused={reusedPasswords.has(c.password)}
-                  onCopy={handleCopy}
-                  onDelete={handleDelete}
-                />
-              </motion.div>
-            ))}
+            <AnimatePresence>
+              {filtered.map((c, index) => (
+                <motion.div
+                  key={c.id}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                  transition={{ delay: index * 0.06, type: "spring", stiffness: 300, damping: 24 }}
+                  whileHover={{ y: -4, scale: 1.015 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <PasswordCard
+                    credential={c}
+                    isReused={reusedPasswords.has(c.password)}
+                    onCopy={handleCopy}
+                    onDelete={handleDelete}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>

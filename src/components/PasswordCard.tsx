@@ -21,8 +21,8 @@ function FaviconIcon({ url, name }: { url: string; name: string }) {
   const faviconUrl = (() => {
     if (!url || failed) return null;
     try {
-      const domain = new URL(url.startsWith("http") ? url : `https://${url}`)
-        .hostname;
+      const domain = new URL(url.startsWith("http") ? url : `https://${url}`).hostname;
+      if (!domain.includes(".")) return null;
       return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
     } catch {
       return null;
@@ -171,6 +171,13 @@ export default function PasswordCard({ credential, isReused, onCopy, onDelete }:
         </div>
       </div>
 
+      {/* Notes */}
+      {credential.notes && (
+        <p className="text-zinc-500 text-xs mt-3 leading-relaxed line-clamp-2">
+          {credential.notes}
+        </p>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between gap-2 mt-4 pt-3.5 border-t border-white/5">
         <div className="flex items-center gap-2">
@@ -178,6 +185,11 @@ export default function PasswordCard({ credential, isReused, onCopy, onDelete }:
           <span className={`text-sm ${sc.color}`}>{sc.label}</span>
         </div>
         <div className="flex items-center gap-2">
+          {Date.now() - credential.updatedAt > 90 * 24 * 60 * 60 * 1000 && (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/20">
+              🕐 90+ дней
+            </span>
+          )}
           {isReused && (
             <span className="text-xs px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
               ⚠ Повторяется
