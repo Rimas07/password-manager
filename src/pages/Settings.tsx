@@ -90,8 +90,20 @@ export default function Settings({ cryptoKey }: Props) {
     try {
       const text = await file.text();
       const parsed = JSON.parse(text);
-      const data = parsed.data ?? parsed;
-      if (!Array.isArray(data)) throw new Error();
+      const raw: Record<string, unknown>[] = parsed.data ?? parsed;
+      if (!Array.isArray(raw)) throw new Error();
+      const now = Date.now();
+      const data: Credential[] = raw.map((r) => ({
+        id: crypto.randomUUID(),
+        name: String(r.name || r.username || r.email || r.title || r.Name || ""),
+        url: String(r.url || r.URL || r.login_uri || ""),
+        username: String(r.username || r.email || r.login_username || r.Username || ""),
+        password: String(r.password || r.Password || r.login_password || ""),
+        category: String(r.category || r.Category || "Other"),
+        notes: String(r.notes || r.note || r.extra || ""),
+        createdAt: Number(r.createdAt) || now,
+        updatedAt: Number(r.updatedAt) || now,
+      }));
       await saveVault(cryptoKey, data);
       setImportStatus(t.importSuccess.replace("{n}", String(data.length)));
     } catch {

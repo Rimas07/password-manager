@@ -72,9 +72,9 @@ export default function Vault({ cryptoKey, onLock }: Props) {
     .filter((c) => {
       const q = search.toLowerCase();
       const matchesSearch =
-        c.name.toLowerCase().includes(q) ||
-        c.username.toLowerCase().includes(q) ||
-        c.url.toLowerCase().includes(q);
+        (c.name ?? "").toLowerCase().includes(q) ||
+        (c.username ?? "").toLowerCase().includes(q) ||
+        (c.url ?? "").toLowerCase().includes(q);
       const matchesCategory = category === CATEGORY_ALL || c.category === category;
       return matchesSearch && matchesCategory;
     })
